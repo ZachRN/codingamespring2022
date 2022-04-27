@@ -1,0 +1,249 @@
+import sys
+import math
+# g_mana_save = 1
+# g_chase_x = 0
+base_x, base_y = [int(i) for i in input().split()]
+heroes_per_player = int(input())  # Always 3
+
+top_left = 1
+if base_x > 1000:
+    top_left = -1
+if base_x < 1000:
+    ebase_x = 17630
+    ebase_y = 9000
+else:
+    ebase_x = 0
+    ebase_y = 0
+
+# def find_middle(x, y, x2, y2, base_x):
+#     modifier = 1
+#     if base_x > 0:
+#         modifier = -1
+#     x_dif = abs(x - x2)
+#     y_dif = abs(y - y2)
+
+#     dist = math.sqrt(x_dif**2 + y_dif**2)
+
+#     if dist < 800:
+#         return (x_dif, y_dif)
+#     return x, y
+
+def wild_magic_gatherer(monster_threats, base_x, base_y, ebase_x, ebase_y, my_mp, my_unit):
+    global top_left
+    mind_control = False
+    if my_mp > 100:
+        mind_control = True
+
+    if len(monster_threats) < 1:
+        print("MOVE", base_x + 2000 * top_left, base_y + 7000 * top_left, "Hanging out")
+        return
+    
+    shortest_dist = None
+    shortest_dist_to_gatherer = 1000000
+    for monster in monster_threats:
+        if top_left == 1 and monster[1]['vx'] > 0 and monster[1]['vy'] > 0:
+            continue
+        elif top_left == -1 and monster[1]['vx'] < 0 and monster[1]['vy'] < 0:
+            continue
+        distance_from_base = math.hypot(abs(base_x + monster[1]['x'] * top_left), abs(base_y + monster[1]['y'] * top_left))
+        if distance_from_base > 5000 and distance_from_base < 10000:
+            dist_to_gatherer = math.hypot(abs(my_unit['x'] - monster[1]['x'] * top_left), abs(my_unit['y'] - monster[1]['y'] * top_left))
+            if dist_to_gatherer < shortest_dist_to_gatherer:
+                shortest_dist = monster
+                shortest_dist_to_gatherer = dist_to_gatherer
+    
+    if shortest_dist is None:
+        print("MOVE", base_x + 2000 * top_left, base_y + 7000 * top_left, "Hanging out")
+        return
+    if shortest_dist[1]['health'] >= 10 and shortest_dist[1]['shield_life'] == 0 and mind_control is True and shortest_dist_to_gatherer < 2000:
+        if top_left == 1 and shortest_dist[1]['vx'] < 0 or shortest_dist[1]['vy'] < 0:
+            print("SPELL CONTROL", shortest_dist[1]['id'], ebase_x, ebase_y, "Sending Reinforcements!")
+            return
+        elif top_left == 1 and shortest_dist[1]['vx'] > 0 or shortest_dist[1]['vy'] > 0:
+            print("SPELL CONTROL", shortest_dist[1]['id'], ebase_x, ebase_y, "Sending Reinforcements!")
+            return
+    print("MOVE", shortest_dist[1]['x'], shortest_dist[1]['y'], "Gathering Wild Magic")
+
+def last_defender(monster_threat, base_x, base_y, ebase_x, ebase_y):
+    global top_left
+    if len(monster_threat) < 1:
+        print("MOVE", base_x + 2500 * top_left, base_y + 2000 * top_left, "Defending the Base Sire!")
+        return
+    
+    if monster_threat[0][1]['x'] < 1000 and monster_threat[0][1]['y'] < 1000 and top_left == 1:
+        print("SPELL WIND", ebase_x, ebase_y, "Blowing You Away")
+    elif monster_threat[0][1]['x'] > 16500 and monster_threat[0][1]['y'] > 8000 and top_left == -1:
+        print("SPELL WIND", ebase_x, ebase_y, "Blowing You Away")
+    elif (len(monster_threat) < 2) and monster_threat[0][0] > 50:
+        print("MOVE", monster_threat[0][1]['x'], monster_threat[0][1]['y'], "Dealing with Intruder")
+    elif len(monster_threat) < 2:
+        print("MOVE", base_x + 2500 * top_left, base_y + 2000 * top_left, "Defending the Base Sire!")
+    else:
+        # move_x, move_y = find_middle(monster_threat[0][1]['x'], monster_threat[0][1]['y'], monster_threat[1][1]['x'], monster_threat[1][1]['y'], base_x)
+        # print("MOVE", move_x, move_y, "Attacking them as best as possible")
+        print("MOVE", monster_threat[0][1]['x'], monster_threat[0][1]['y'], "Going on the Offense!")
+    return
+
+def middle_man(monster_threat, base_x, base_y, my_unit):
+    global top_left
+
+    if len(monster_threat) < 1:
+        print("MOVE", base_x + 6000 * top_left, base_y + 2000 * top_left, "Early Hunt")
+        return
+    
+    high_threat_count = 0
+    shortest_dist = None
+    shortest_dist_to_gatherer = 1000000
+    for monster in monster_threat:
+        if monster[1]['vx'] > 0 and monster[1]['vy'] > 0:
+            continue
+        elif top_left == -1 and monster[1]['vx'] < 0 and monster[1]['vy'] < 0:
+            continue
+        if monster[0] > 100:
+            high_threat_count += 1
+        distance_from_base = math.hypot(abs(base_x + monster[1]['x'] * top_left), abs(base_y + monster[1]['y'] * top_left))
+        if distance_from_base > 5000 and distance_from_base < 10000:
+            dist_to_gatherer = math.hypot(abs(my_unit['x'] - monster[1]['x'] * top_left), abs(my_unit['y'] - monster[1]['y'] * top_left))
+            if dist_to_gatherer < shortest_dist_to_gatherer:
+                shortest_dist = monster
+                shortest_dist_to_gatherer = dist_to_gatherer
+
+    if high_threat_count  > 4:
+        # x_walk, y_walk = find_middle(monster_threat[0][1]['x'], monster_threat[0][1]['y'], monster_threat[1][1]['x'], monster_threat[1][1]['y'], base_x)
+        # print("MOVE", x_walk, y_walk, "MANY THREATS AM SCARED")
+        print("MOVE", monster_threat[0][1]['x'], monster_threat[0][1]['y'], "MANY THREATS AM SCARED")
+    elif shortest_dist is not None:
+        print("MOVE", shortest_dist[1]['x'], shortest_dist[1]['y'], "Hitting a nearby target!")
+    else:
+        print("MOVE", base_x + 6000 * top_left, base_y + 2000 * top_left, "Returning")
+
+    
+
+def my_hero_control(monster_threat, my_units, enemy_units, my_mp, base_x, base_y, ebase_x, ebase_y):
+    wild_magic_gatherer(monster_threat, base_x, base_y, ebase_x, ebase_y, my_mp, my_units[0])
+    middle_man(monster_threat, base_x, base_y, my_units[1])
+    last_defender(monster_threat, base_x, base_y, ebase_x, ebase_y)
+
+
+# def scout(scout_unit, monster_units, my_mp, base_x, base_y, monster_threat):
+#     modifier = 1
+#     if base_x > 10:
+#         modifier = -1
+#     global g_mana_save
+#     global g_chase_x 
+#     global g_chase_y
+
+#     if my_mp > 100:
+#         g_mana_save = 0
+#     elif my_mp < 30:
+#         g_mana_save = 1
+#     if g_mana_save == 0:
+#         scout_x, scout_y = scout_unit['x'] , scout_unit['y']
+#         for monster in monster_units:
+#             if abs(scout_x - monster['x']) < 400 or abs(scout_y - monster['y']) < 400:
+#                 if modifier == 1:
+#                     print("SPELL", "WIND", 17630, 9000, "Offensive Mage")  
+#                 elif modifier == 0:
+#                     print("SPELL", "WIND", 0, 0, "Offensive Mage")
+#                 break
+#     else:
+#         print("MOVE", (base_x + 5000 * modifier), base_y + 5000 * modifier, "Offensive Mage")
+#     return 0
+
+# Auto-generated code below aims at helping you parse
+# the standard input according to the problem statement.
+
+# base_x: The corner of the map representing your base
+
+# game loop
+while True:
+    #To_Change
+    my_hp, my_mp = [int(j) for j in input().split()]
+    en_hp, en_mp = [int(j) for j in input().split()]
+    # for i in range(2):
+    #     # health: Each player's base health
+    #     # mana: Ignore in the first league; Spend ten mana to cast a spell
+    #     health, mana = [int(j) for j in input().split()]
+    entity_count = int(input())  # Amount of heros and monsters you can see
+
+    monster_units = []
+    my_units = []
+    enemy_units = []
+
+    for i in range(entity_count):
+        # _id: Unique identifier
+        # _type: 0=monster, 1=your hero, 2=opponent hero
+        # x: Position of this entity
+        # shield_life: Ignore for this league; Count down until shield spell fades
+        # is_controlled: Ignore for this league; Equals 1 when this entity is under a control spell
+        # health: Remaining health of this monster
+        # vx: Trajectory of this monster
+        # near_base: 0=monster with no target yet, 1=monster targeting a base
+        # threat_for: Given this monster's trajectory, is it a threat to 1=your base, 2=your opponent's base, 0=neither
+        _id, _type, x, y, shield_life, is_controlled, health, vx, vy, near_base, threat_for = [int(j) for j in input().split()]
+        unit = {
+            'id' : _id,
+            'type' : _type,
+            'x' : x,
+            'y' : y,
+            'shield_life' : shield_life,
+            'is_controlled' : is_controlled,
+            'health' : health,
+            'vx' : vx,
+            'vy' : vy,
+            'near_base' : near_base,
+            'threat_for' : threat_for
+        }
+        if _type == 0:
+            monster_units.append(unit)
+        elif _type == 1:
+            my_units.append(unit)
+        else:
+            enemy_units.append(unit)
+    
+
+    #Generating a threat aggro based on distance from base
+    monster_threat = []
+    for monster in monster_units:
+        threat_value = 0
+        if monster['near_base'] == 1 and monster['threat_for'] == 1:
+            threat_value = 100
+        elif monster['threat_for'] == 1:
+            threat_value = 50
+        threat_distance_modifier = math.hypot(base_x - monster['x'], base_y - monster['y'])
+        threat_value += 50 * (1 / (threat_distance_modifier + 1))
+        monster_threat.append((threat_value, monster))
+
+    #Would sort monster threat from low to high, if reverse wasnt flipped
+    monster_threat.sort(reverse = True)
+    my_hero_control(monster_threat, my_units, enemy_units, my_mp, base_x, base_y, ebase_x, ebase_y)
+    #Offensive man
+    # scout(my_units[0], monster_units, my_mp, base_x, base_y, monster_threat)
+    #Defensive
+
+    # for i in range(2):
+        # Write an action using print
+        # To debug: print("Debug messages...", file=sys.stderr, flush=True)
+        # In the first league: MOVE <x> <y> | WAIT; In later leagues: | SPELL <spellParams>;
+        #Move Enemy to Highest Target Threat, otherwise move back
+        # if len(monster_threat) > i:
+        #     if monster_threat[i][0] > 100:
+        #         move_x, move_y = monster_threat[0][1]['x'], monster_threat[0][1]['y']
+        #         offset_x, offset_y = 0, 0
+        #         if len(monster_threat) > 1:
+        #             offset_x, offset_y = find_middle(monster_threat[0][1]['x'], monster_threat[1][1]['y'], monster_threat[0][1]['x'], monster_threat[1][1]['y'], base_x)
+        #         print("MOVE", move_x + offset_x, move_y + offset_y, "Defense One")
+        #         print("MOVE", move_x + offset_x, move_y + offset_y, "Defense Two")
+        #         break
+        #     if monster_threat[i][0] > 50:
+        #         print("MOVE", monster_threat[i][1]['x'], monster_threat[i][1]['y'])
+        #     else:
+        #         if i > 1:
+        #             if monster_threat[i - 1][0] > 50:
+        #                 print("MOVE", monster_threat[i - 1][1]['x'], monster_threat[i - 1][1]['y'])
+        #             else:
+        #                 print("MOVE", 2500, 2500)
+        #         else:                 
+        #             print("MOVE", 2500, 2500)
+        # else:
+        #     print("WAIT")
