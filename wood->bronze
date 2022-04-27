@@ -1,0 +1,98 @@
+import sys
+import math
+
+# Auto-generated code below aims at helping you parse
+# the standard input according to the problem statement.
+
+# base_x: The corner of the map representing your base
+base_x, base_y = [int(i) for i in input().split()]
+heroes_per_player = int(input())  # Always 3
+
+# game loop
+while True:
+    #To_Change
+    my_hp, my_mp = [int(j) for j in input().split()]
+    en_hp, en_mp = [int(j) for j in input().split()]
+    # for i in range(2):
+    #     # health: Each player's base health
+    #     # mana: Ignore in the first league; Spend ten mana to cast a spell
+    #     health, mana = [int(j) for j in input().split()]
+    entity_count = int(input())  # Amount of heros and monsters you can see
+
+    monster_units = []
+    my_units = []
+    enemy_units = []
+
+    for i in range(entity_count):
+        # _id: Unique identifier
+        # _type: 0=monster, 1=your hero, 2=opponent hero
+        # x: Position of this entity
+        # shield_life: Ignore for this league; Count down until shield spell fades
+        # is_controlled: Ignore for this league; Equals 1 when this entity is under a control spell
+        # health: Remaining health of this monster
+        # vx: Trajectory of this monster
+        # near_base: 0=monster with no target yet, 1=monster targeting a base
+        # threat_for: Given this monster's trajectory, is it a threat to 1=your base, 2=your opponent's base, 0=neither
+        _id, _type, x, y, shield_life, is_controlled, health, vx, vy, near_base, threat_for = [int(j) for j in input().split()]
+        unit = {
+            'id' : _id,
+            'type' : _type,
+            'x' : x,
+            'y' : y,
+            'shield_life' : shield_life,
+            'is_controlled' : is_controlled,
+            'health' : health,
+            'vx' : vx,
+            'vy' : vy,
+            'near_base' : near_base,
+            'threat_for' : threat_for
+        }
+        if _type == 0:
+            monster_units.append(unit)
+        elif _type == 1:
+            my_units.append(unit)
+        else:
+            enemy_units.append(unit)
+    
+
+    #Generating a threat aggro based on distance from base
+    monster_threat = []
+    for monster in monster_units:
+        threat_value = 0
+        if monster['near_base'] == 1 and monster['threat_for'] == 1:
+            threat_value = 100
+        elif monster['threat_for'] == 1:
+            threat_value = 50
+        threat_distance_modifier = math.hypot(base_x - monster['x'], base_y - monster['y'])
+        threat_value += 50 * (1 / (threat_distance_modifier + 1))
+        monster_threat.append((threat_value, monster))
+
+    #Would sort monster threat from low to high, if reverse wasnt flipped
+    monster_threat.sort(reverse = True)
+    for i in range(heroes_per_player):
+
+        # Write an action using print
+        # To debug: print("Debug messages...", file=sys.stderr, flush=True)
+
+
+        # In the first league: MOVE <x> <y> | WAIT; In later leagues: | SPELL <spellParams>;
+
+        #Move Enemy to Highest Target Threat, otherwise move back
+        if len(monster_threat) > i:
+            if monster_threat[i][0] > 100:
+                print("MOVE", monster_threat[0][1]['x'], monster_threat[0][1]['y'])
+                print("MOVE", monster_threat[0][1]['x'], monster_threat[0][1]['y'])
+                print("MOVE", monster_threat[0][1]['x'], monster_threat[0][1]['y'])
+                break
+            if monster_threat[i][0] > 50:
+                print("MOVE", monster_threat[i][1]['x'], monster_threat[i][1]['y'])
+            else:
+                if i > 1:
+                    if monster_threat[i - 1][0] > 50:
+                        print("MOVE", monster_threat[i - 1][1]['x'], monster_threat[i - 1][1]['y'])
+                    else:
+                        print("MOVE", 2500, 2500)
+                else:                 
+                    print("MOVE", 2500, 2500)
+        else:
+            print("WAIT")
